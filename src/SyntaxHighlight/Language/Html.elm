@@ -22,6 +22,7 @@ type alias Token =
 
 type Syntax
     = Tag
+    | TagSymbol
     | Attribute
     | AttributeValue
     | Error
@@ -50,10 +51,6 @@ mainLoop revTokens =
             |> map (\n -> Loop (( T.Normal, n ) :: revTokens))
         , openTag revTokens
             |> map Loop
-
-        -- , chompIf (always True)
-        --     |> getChompedString
-        --     |> map (\b -> Loop (( T.C Error, b ) :: revTokens))
         , succeed (Done revTokens)
         ]
 
@@ -68,7 +65,7 @@ openTag revTokens =
                     ( T.C Error, b ) :: revTokens
 
                 else
-                    ( T.Normal, b ) :: revTokens
+                    ( T.C TagSymbol, b ) :: revTokens
             )
         |> andThen tag
 
@@ -86,16 +83,16 @@ openTagParser =
 tag : List Token -> Parser (List Token)
 tag revTokens =
     oneOf
-        [ chompIf isStartTagChar
-            |> thenChompWhile isTagChar
-            |> getChompedString
-            |> map (\b -> ( T.C Tag, b ))
-            |> andThen
-                (\n -> loop (n :: revTokens) attributeLoop)
-        , chompIf (\c -> c == ' ')
-            |> thenChompWhile isTagChar
-            |> getChompedString
-            |> map (\b -> ( T.C Error, b ))
+        [ oneOf
+            [ chompIf isStartTagChar
+                |> thenChompWhile isTagChar
+                |> getChompedString
+                |> map (\b -> ( T.C Tag, b ))
+            , chompIf (\c -> c == ' ')
+                |> thenChompWhile isTagChar
+                |> getChompedString
+                |> map (\b -> ( T.C Error, b ))
+            ]
             |> andThen
                 (\n -> loop (n :: revTokens) attributeLoop)
         , succeed revTokens
@@ -125,6 +122,9 @@ attributeLoop revTokens =
         , chompIfThenWhile (\c -> not (isWhitespace c) && c /= '>')
             |> getChompedString
             |> map (\b -> Loop (( T.Normal, b ) :: revTokens))
+        , chompIf (\c -> c == '>')
+            |> getChompedString
+            |> map (\b -> Done (( T.C TagSymbol, b ) :: revTokens))
         , succeed (Done revTokens)
         ]
 
@@ -241,16 +241,19 @@ syntaxToStyle : Syntax -> ( Style.Required, String )
 syntaxToStyle syntax =
     case syntax of
         Tag ->
-            ( Style3, "xml-t" )
+            ( Style3, "html-t" )
+
+        TagSymbol ->
+            ( Style3, "html-ts" )
 
         Attribute ->
-            ( Style5, "xml-a" )
+            ( Style5, "html-a" )
 
         AttributeValue ->
-            ( Style2, "xlm-av" )
+            ( Style2, "html-av" )
 
         Error ->
-            ( StyleError, "json-e" )
+            ( StyleError, "html-e" )
 
 
 
