@@ -64,7 +64,7 @@ openTag revTokens =
         |> getChompedString
         |> map
             (\b ->
-                if b == "< " then
+                if b == "< " || b == "<?" then
                     ( T.C Error, b ) :: revTokens
 
                 else
