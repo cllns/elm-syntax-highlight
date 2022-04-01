@@ -6,6 +6,7 @@ module SyntaxHighlight exposing
     , Theme, useTheme, monokai, gitHub, oneDark
     , ConsoleOptions, toConsole
     , CustomTransform, toCustom
+    , html
     )
 
 {-| Syntax highlighting in Elm.
@@ -50,6 +51,7 @@ import Html exposing (Html, text)
 import Parser
 import SyntaxHighlight.Language.Css as Css
 import SyntaxHighlight.Language.Elm as Elm
+import SyntaxHighlight.Language.Html as Html_
 import SyntaxHighlight.Language.Javascript as Javascript
 import SyntaxHighlight.Language.Json as Json
 import SyntaxHighlight.Language.NoLang as NoLang
@@ -164,6 +166,14 @@ sql =
 json : String -> Result (List Parser.DeadEnd) HCode
 json =
     Json.toLines
+        >> Result.map HCode
+
+
+{-| Parse HTML syntax.
+-}
+html : String -> Result (List Parser.DeadEnd) HCode
+html =
+    Html_.toLines
         >> Result.map HCode
 
 
